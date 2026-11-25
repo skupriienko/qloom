@@ -1,0 +1,43 @@
+~= QLOOM/1.0 id="legacy.release.v1" tier=L4 state=CRITIQUE_GATE parent="quipu-000000000000" epoch=1
+
+@charter {
+  goal: "Validate legacy service release before deployment."
+  lock L_NO_SHELL: forbid "cwe78_shell_interpolation"
+  lock L_BUDGET: budget tokens<=1500 chars<=8000
+  mandate M_VERIFY: must "Run release checks and keep outputs concise."
+}
+
+@lattice {
+  relation artifacts(id:id, tier:tier, path:str) {
+    art_spec | T0 | "docs/release_spec.md"
+  }
+  relation checks(id:id, mod:mod, tier:tier, summary:str, source:ref, supersedes:ref?) {
+    chk_1 | verified | T0 | "Unit suite passed with zero regressions." | ->art_spec | _
+  }
+}
+
+@weave mode=share {
+  node n_lint spin=Z state=SANDBOX_COMPUTE deps=[] R={"src/app.py"} W={} -> done
+  node n_test spin=S state=CRITIQUE_GATE deps=[n_lint] R={"src/app.py"} W={"tests/test_app.py"} -> active
+}
+
+@contracts {
+  clause C_RELEASE {
+    requires: [->chk_1, ->n_test]
+    ensures: "Run unit tests for release verification."
+    witness_argv: ["pytest", "tests/test_app.py", "-q"]
+  }
+}
+
+@vault {
+  blob b_webhook tier=T2 sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" bytes=512 origin="ci_webhook" uri="vault://blobs/b_webhook"
+}
+
+@pulse {
+  focus: ->n_test
+  filament: "[QLOOM::FILAMENT] [done:n_lint] ==> @[active:n_test]"
+  next: ["Complete release check.", "Publish signed artifact."]
+  blockers: []
+}
+
+=~ knot="quipu-975b6b0b31bd" sha256="975b6b0b31bdb88fbf6d444955d920832aa86b4afa3cce593e2c2faa90affd39" reconciled=true

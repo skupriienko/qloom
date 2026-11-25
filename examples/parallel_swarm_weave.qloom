@@ -1,0 +1,46 @@
+~= QLOOM/2.0 id="swarm.release.v2" tier=L4 state=MUTATION_PREPARE parent="qloom-000000000000" epoch=2 admin=working tag="parallel_swarm" hub="SwarmHub"
+
+@charter {
+  goal: "Run parallel module updates with disjoint write sets and budget checks."
+  lock L_NO_SHELL: forbid "cwe78_shell_interpolation"
+  lock L_SPEND: budget tokens<=3000 chars<=8000 cost_usd<=2.5 retries<=2 tol_pct<=5.0
+  mandate M_DISJOINT: must "Keep parallel worker write sets disjoint."
+}
+
+@lattice {
+  relation ledger(id:id, mod:mod, tier:tier, credit:int, debt:int, guard:int) ^count=4 ^sum(credit, 0..1)=600 ^net(credit, debt)=0 ^tol(credit, pct=5.0)=980 ^quota(guard, pct=22.5)=4000 {
+    w_api | verified | T0 | 300 | 250 | 200
+    w_ui | verified | T0 | 300 | 250 | 200
+    ---
+    w_docs | inferred | T1 | 200 | 250 | 250
+    w_qa | verified | T0 | 200 | 250 | 250
+  }
+}
+
+@weave mode=share {
+  node n_plan spin=Z face=R weight=thick state=REASONING deps=[] R={"README.md"} W={} -> done
+  node n_api spin=S face=R weight=medium state=MUTATION_PREPARE deps=[n_plan] R={"src/api.py"} W={"src/api.py"} -> active
+  node n_ui spin=S face=R weight=fine state=MUTATION_PREPARE deps=[n_plan] R={"src/ui.py"} W={"src/ui.py"} -> active
+  node n_shadow spin=Z face=V weight=fine state=CRITIQUE_GATE deps=[n_api, n_ui] R={"src/api.py", "src/ui.py"} W={} -> pending
+  node n_qa spin=S face=R weight=medium state=CRITIQUE_GATE deps=[n_api, n_ui] R={"src/api.py", "src/ui.py"} W={"tests/test_e2e.py"} -> pending
+}
+
+@contracts {
+  clause C_SWARM {
+    requires: [->w_api, ->n_qa]
+    ensures: "Verify full swarm integration suite."
+    witness_argv: ["pytest", "tests/test_e2e.py", "-q"]
+    timeout_s: 180
+    rollback_argv: ["git", "reset", "--hard", "HEAD"]
+  }
+}
+
+@pulse {
+  focus: ->n_api
+  filament: "[QLOOM::FILAMENT] [done:n_plan] ==> @[active:n_api,n_ui] ==> [pending:n_qa,n_shadow]"
+  signals: ["bernstein_disjoint", "wave_parallel"]
+  next: ["Complete API and UI edits.", "Run shadow and QA checks."]
+  blockers: []
+}
+
+=~ knot="qloom-0bc681b7f44d" sha256="0bc681b7f44d1f4815594b58a0e2370dbfd9f1467f1f419fefaf2088516f7492" reconciled=true

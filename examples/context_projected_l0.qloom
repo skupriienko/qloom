@@ -1,0 +1,18 @@
+~= QLOOM/2.0 id="epic.auth.v2" tier=L0 state=MUTATION_PREPARE parent="qloom-fa62f41be2b0" epoch=4 admin=working tag="auth_migration"
+
+@charter {
+  goal: "Migrate token validator to stdlib HMAC verification."
+  lock G0_NO_SHELL: forbid "cwe78_shell_interpolation"
+  lock G0_BUDGET: budget tokens<=2000 chars<=8000 cost_usd<=1.5 retries<=3 tol_pct<=5.0
+  mandate STE_RULE: must "Keep each step concise and verify outputs with tests."
+}
+
+@pulse {
+  focus: ->n_patch
+  filament: "[QLOOM::FILAMENT] [-1:n_audit] ==> @[0:n_patch|MUTATION_PREPARE] ==> [+1:n_tests]"
+  signals: ["disjoint_rw", "taint_isolated"]
+  next: ["Finish auth patch.", "Run pytest witness argv."]
+  blockers: []
+}
+
+=~ knot="qloom-d2f9f6440b62" sha256="d2f9f6440b627032d784925f34bdd33f93ef91ee68218b119e816ea57254d481" reconciled=true

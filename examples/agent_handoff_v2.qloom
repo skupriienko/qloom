@@ -1,0 +1,52 @@
+~= QLOOM/2.0 id="epic.auth.v2" tier=L4 state=MUTATION_PREPARE parent="qloom-000000000000" epoch=4 admin=working tag="auth_migration"
+
+@charter {
+  goal: "Migrate token validator to stdlib HMAC verification."
+  lock G0_NO_SHELL: forbid "cwe78_shell_interpolation"
+  lock G0_BUDGET: budget tokens<=2000 chars<=8000 cost_usd<=1.5 retries<=3 tol_pct<=5.0
+  mandate STE_RULE: must "Keep each step concise and verify outputs with tests."
+}
+
+@lattice {
+  relation artifacts(id:id, tier:tier, path:str) {
+    art_audit | T1 | "artifacts/auth_audit.md"
+    adr_04 | T0 | "docs/adr/0004_hmac_stdlib.md"
+  }
+  relation claims(id:id, mod:mod, tier:tier, claim:str, source:ref, supersedes:ref?) ^count=3 {
+    c1 | superseded | T1 | "JWT parser uses custom base64 decoder." | ->art_audit | _
+    c2 | verified | T0 | "Auth validator enforces stdlib HMAC-SHA256." | ->adr_04 | ->c1
+    ---
+    c3 | tentative | T2 | "External RFC 7519 draft notes key rotation window." | ->v_ext_rfc | _
+  }
+}
+
+@weave mode=share {
+  node n_audit spin=Z face=R weight=fine state=SANDBOX_COMPUTE deps=[] R={"src/auth.py"} W={} -> done
+  node n_patch spin=S face=R weight=thick state=MUTATION_PREPARE deps=[n_audit] R={"src/auth.py"} W={"src/auth.py"} -> active
+  node n_canary spin=Z face=V weight=fine state=CRITIQUE_GATE deps=[n_patch] R={"src/auth.py"} W={} -> pending
+  node n_tests spin=S face=R weight=medium state=CRITIQUE_GATE deps=[n_patch] R={"src/auth.py"} W={"tests/test_auth.py"} -> pending
+}
+
+@contracts {
+  clause C_UNIT {
+    requires: [->c2, ->n_patch]
+    ensures: "Run unit tests and confirm zero HMAC regressions."
+    witness_argv: ["pytest", "tests/unit/test_auth.py", "-q"]
+    timeout_s: 120
+    rollback_argv: ["git", "checkout", "--", "src/auth.py"]
+  }
+}
+
+@vault {
+  blob v_ext_rfc tier=T2 sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" bytes=4096 origin="rfc7519" uri="vault://blobs/v_ext_rfc" wrap="rfc_excerpt"
+}
+
+@pulse {
+  focus: ->n_patch
+  filament: "[QLOOM::FILAMENT] [-1:n_audit] ==> @[0:n_patch|MUTATION_PREPARE] ==> [+1:n_tests]"
+  signals: ["disjoint_rw", "taint_isolated"]
+  next: ["Finish auth patch.", "Run pytest witness argv."]
+  blockers: []
+}
+
+=~ knot="qloom-fa62f41be2b0" sha256="fa62f41be2b0541800ed09bedb1d332af4f7729a63bff763023356279c124ea2" reconciled=true
