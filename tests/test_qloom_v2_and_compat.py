@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from qloom import (
     DEFAULT_QLOOM_VERSION,
     MAX_WORKING_ROWS,

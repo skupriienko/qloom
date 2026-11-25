@@ -7,6 +7,7 @@ import io
 from pathlib import Path
 
 import pytest
+
 from qloom import (
     MAX_WIRE_CHARS,
     QLOOM_V1,
@@ -198,8 +199,7 @@ def test_law04_taint_lattice_isolation() -> None:
     doc_contract.seal = compute_seal(doc_contract)
     rep_c = verify(doc_contract)
     assert any(
-        f["law"] == "LAW_04_TAINT_LATTICE" and f["plane"] == "contracts"
-        for f in rep_c["findings"]
+        f["law"] == "LAW_04_TAINT_LATTICE" and f["plane"] == "contracts" for f in rep_c["findings"]
     )
 
     doc_focus = sample_qloom(version=QLOOM_V2)
@@ -207,8 +207,7 @@ def test_law04_taint_lattice_isolation() -> None:
     doc_focus.seal = compute_seal(doc_focus)
     rep_f = verify(doc_focus)
     assert any(
-        f["law"] == "LAW_04_TAINT_LATTICE" and f["plane"] == "pulse"
-        for f in rep_f["findings"]
+        f["law"] == "LAW_04_TAINT_LATTICE" and f["plane"] == "pulse" for f in rep_f["findings"]
     )
 
     doc_row = sample_qloom(version=QLOOM_V2)
@@ -216,8 +215,7 @@ def test_law04_taint_lattice_isolation() -> None:
     doc_row.seal = compute_seal(doc_row)
     rep_r = verify(doc_row)
     assert any(
-        f["law"] == "LAW_04_TAINT_LATTICE" and f["plane"] == "lattice"
-        for f in rep_r["findings"]
+        f["law"] == "LAW_04_TAINT_LATTICE" and f["plane"] == "lattice" for f in rep_r["findings"]
     )
 
 
@@ -289,9 +287,7 @@ def test_law06_dag_and_refs_and_law07_clarity_ceiling() -> None:
     assert any(f["law"] == "LAW_07_CLARITY_AND_CEILING" for f in rep_fluff["findings"])
 
     huge_doc = sample_qloom(version=QLOOM_V2)
-    huge_doc.charter.locks = [
-        lk for lk in huge_doc.charter.locks if lk.kind != "budget"
-    ]
+    huge_doc.charter.locks = [lk for lk in huge_doc.charter.locks if lk.kind != "budget"]
     huge_doc.pulse.filament = "x" * (MAX_WIRE_CHARS + 200)
     huge_doc.seal = compute_seal(huge_doc)
     assert any(f["law"] == "LAW_07_CLARITY_AND_CEILING" for f in verify(huge_doc)["findings"])

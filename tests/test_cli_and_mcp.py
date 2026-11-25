@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 import qloom
 from qloom.cli import main
 from qloom.mcp_server import QLOOM_COMPAT_ACTIONS, QloomMCPServer, serve_mcp_stdio
@@ -85,9 +86,7 @@ def test_cli_all_subcommands_and_json_modes(
     assert down_out["version"] == "QLOOM/1.0"
 
     assert (
-        main(
-            ["distill", "--file", str(v2_file), "--tier", "L2", "--doc-id", "sum.doc", "--json"]
-        )
+        main(["distill", "--file", str(v2_file), "--tier", "L2", "--doc-id", "sum.doc", "--json"])
         == 0
     )
     dist_out = json.loads(capsys.readouterr().out)
@@ -137,9 +136,9 @@ def test_mcp_server_protocol_and_all_tools() -> None:
         "qloom_plan_waves",
         "qloom_compat",
     }
-    assert set(
-        tools["qloom_compat"]["inputSchema"]["properties"]["action"]["enum"]
-    ) == set(QLOOM_COMPAT_ACTIONS)
+    assert set(tools["qloom_compat"]["inputSchema"]["properties"]["action"]["enum"]) == set(
+        QLOOM_COMPAT_ACTIONS
+    )
 
     assert server.handle_request({"jsonrpc": "2.0", "method": "notifications/initialized"}) is None
 
@@ -190,7 +189,7 @@ def test_mcp_server_protocol_and_all_tools() -> None:
         "qloom_compat",
         {"action": "link", "packets": {"a": v1_wire, "b": v2_wire}, "hub_id": "SwarmHub"},
     )
-    assert "hub=\"SwarmHub\"" in str(linked["qloom_text"])
+    assert 'hub="SwarmHub"' in str(linked["qloom_text"])
 
     to_j = call(20, "qloom_compat", {"action": "to_json", "qloom_text": v2_wire})
     from_j = call(21, "qloom_compat", {"action": "from_json", "json_text": str(to_j["json_text"])})
