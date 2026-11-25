@@ -269,6 +269,25 @@ Add the following block to your MCP client configuration (Claude Desktop, Cursor
 
 ---
 
+## Using with AI Coding Agents (Agent Skill)
+
+This repository includes an Agent Skills specification–compliant skill at [`skills/qloom/SKILL.md`](skills/qloom/SKILL.md) (mirrored at [`SKILL.md`](SKILL.md)) with detailed references in [`skills/qloom/references/`](skills/qloom/references/syntax-and-laws.md).
+
+```bash
+# 1. Install via npx skills CLI (Claude Code, Codex, Cursor, Windsurf, Gemini CLI, etc.)
+npx skills add skupriienko/qloom
+
+# 2. Or clone / copy into your agent's global or project skill directory
+git clone https://github.com/skupriienko/qloom.git /tmp/qloom-repo
+cp -r /tmp/qloom-repo/skills/qloom ~/.claude/skills/qloom   # Claude Code
+# cp -r /tmp/qloom-repo/skills/qloom ~/.agents/skills/qloom # Cross-agent (~/.agents/skills)
+# cp -r /tmp/qloom-repo/skills/qloom .cursor/skills/qloom   # Project-local Cursor
+```
+
+Pair the skill with `pip install "git+https://github.com/skupriienko/qloom.git"` (CLI) or the `qloom mcp` Stdio server above so agents follow `.qloom` best practices and run live static verification, wave scheduling, and `L4 -> L0` compaction.
+
+---
+
 ## Andean Textile & Loom Heritage
 
 Every wire keyword and Python identifier in `QLOOM/2.0` uses concise, explicit English. Historically, the format's structural model draws inspiration from Andean knotted-cord (*quipu/khipu*) accounting and weaving traditions:
